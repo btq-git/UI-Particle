@@ -1,0 +1,14 @@
+{
+    "name": "com.tyma.ui-particle",
+    "version": "0.1.0",
+    "description": "Chroma package can be used for better display",
+    "displayName": "UI Particle System",
+   "keywords": [
+      "ui",
+      "particle"
+    ],
+    "author": {
+      "name": "Martyna Sobala"
+    }
+  }
+  
