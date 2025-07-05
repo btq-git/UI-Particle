@@ -1,28 +1,29 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace UIParticle
 {
-	[RequireComponent(typeof(RectTransform), typeof(Image))]
+	[RequireComponent(typeof(RectTransform), typeof(RawImage))]
 	[ExecuteAlways]
 	public class UIParticleMeshModifier : MonoBehaviour, IMeshModifier
 	{
+		private static readonly int EmitterDimensions = Shader.PropertyToID("_EmitterDimensions");
+		private static readonly int Position = Shader.PropertyToID("_Position");
+		
 		[SerializeField]
 		private int quadsCount = 1;
 
 		[SerializeField]
-		private Vector2 quadSize = new (10, 10);
+		private Vector2 quadSize = new(10, 10);
 
 		[SerializeField]
 		private float quadZDistance = 0.1f;
-		
+
 		private Graphic graphic;
 
 		private Canvas canvas;
 		private RectTransform rectTransform;
-		private static readonly int EmitterDimensions = Shader.PropertyToID("_EmitterDimensions");
-
+		
 		private Vector2 LastEmitterDimensions;
 
 		private bool GraphicObjectReady => graphic != null &&
@@ -30,30 +31,34 @@ namespace UIParticle
 
 		private void OnValidate()
 		{
-			rectTransform ??= GetComponent<RectTransform>();
 			canvas ??= GetComponentInParent<Canvas>(false);
 			if (canvas == null)
 			{
 				Debug.LogError("UI Particle Mesh Modifier works only in canvas");
+				return;
 			}
-			else
-			{
-			 EnsureAdditionalChannels();
-			}
+			EnsureAdditionalChannels();
+			rectTransform ??= GetComponent<RectTransform>();
 			graphic ??= GetComponent<Graphic>();
 			graphic.SetVerticesDirty();
 		}
 
 		private void Update()
 		{
+			if (graphic.materialForRendering == null)
+				return;
+			
+			graphic.materialForRendering.SetVector(Position, transform.localPosition);
+			
 			if (!GraphicObjectReady) return;
 			
-			Vector2 size = graphic.material.GetVector(EmitterDimensions);
+			Vector2 size = graphic.materialForRendering.GetVector(EmitterDimensions);
 			if (size == LastEmitterDimensions) return;
-			
+
 			LastEmitterDimensions = size;
 			size = 2 * LastEmitterDimensions + quadSize;
 			rectTransform.sizeDelta = size;
+			
 		}
 
 		private void EnsureAdditionalChannels()
@@ -91,29 +96,21 @@ namespace UIParticle
 
 		public void ModifyMesh(VertexHelper verts)
 		{
-			if (verts.currentVertCount != 4)
-			{
-				Debug.LogError($"UI Particle only accept quads as input", this);
-				return;
-			}
-
+			// Verts could be original quad or already modified mesh. To be save, it's always cleared
+			verts.Clear();
+			
 			Vector3 localPosition = transform.localPosition;
 			var halfSize = quadSize * 0.5f;
 
-			List<UIVertex> original = new();
-			verts.GetUIVertexStream(original);
-
-			// verts are in triangles order, but swapping one gives in vertices order
-			original[3] = original[4];
-			verts.Clear();
-
 			var quadVerts = new UIVertex[4];
 			var vertices = new Vector3[4];
+			var uvs = QuadHelper.GetQuadUVs();
+			Color color = graphic.color;
 
 			for (int i = 0; i < quadsCount; i++)
 			{
 				float vertexTint = i / (float)quadsCount;
-				
+
 				vertices[0] = new Vector3(-halfSize.x, -halfSize.y, i * quadZDistance);
 				vertices[1] = new Vector3(-halfSize.x, halfSize.y, i * quadZDistance);
 				vertices[2] = new Vector3(halfSize.x, halfSize.y, i * quadZDistance);
@@ -124,12 +121,12 @@ namespace UIParticle
 					quadVerts[j] = new UIVertex
 					{
 						position = vertices[j],
-						color = original[j].color,
-						uv0 = original[j].uv0,
-						uv1 = original[j].uv0,
-						uv2 = original[j].uv0,
-						uv3 = original[j].uv0,
-						normal = original[j].normal,
+						color = color,
+						uv0 = uvs[j],
+						uv1 = uvs[j],
+						uv2 = uvs[j],
+						uv3 = uvs[j],
+						normal = Vector3.zero,
 						tangent = new Vector4(localPosition.x, localPosition.y, localPosition.z, vertexTint),
 					};
 				}

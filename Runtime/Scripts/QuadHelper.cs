@@ -8,9 +8,9 @@ namespace UIParticle
 		{
 			var uv = new Vector2[4];
 			uv[0] = new Vector2(0, 0);
-			uv[1] = new Vector2(1, 0);
-			uv[2] = new Vector2(0, 1);
-			uv[3] = new Vector2(1, 1);
+			uv[1] = new Vector2(0, 1);
+			uv[2] = new Vector2(1, 1);
+			uv[3] = new Vector2(1, 0);
 			return uv;
 		}
 
