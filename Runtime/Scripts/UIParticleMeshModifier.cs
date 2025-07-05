@@ -6,7 +6,7 @@ namespace UIParticle
 {
 	[RequireComponent(typeof(RectTransform), typeof(Image))]
 	[ExecuteAlways]
-	public class BTQQuadStacker : MonoBehaviour, IMeshModifier
+	public class UIParticleMeshModifier : MonoBehaviour, IMeshModifier
 	{
 		[SerializeField]
 		private int quadsCount = 1;
@@ -16,25 +16,38 @@ namespace UIParticle
 
 		[SerializeField]
 		private float quadZDistance = 0.1f;
+		
+		private Graphic graphic;
 
 		private Canvas canvas;
-		private Graphic graphic;
 		private RectTransform rectTransform;
 		private static readonly int EmitterDimensions = Shader.PropertyToID("_EmitterDimensions");
 
 		private Vector2 LastEmitterDimensions;
 
+		private bool GraphicObjectReady => graphic != null &&
+										   graphic.materialForRendering.HasVector(EmitterDimensions);
+
 		private void OnValidate()
 		{
 			rectTransform ??= GetComponent<RectTransform>();
 			canvas ??= GetComponentInParent<Canvas>(false);
+			if (canvas == null)
+			{
+				Debug.LogError("UI Particle Mesh Modifier works only in canvas");
+			}
+			else
+			{
+			 EnsureAdditionalChannels();
+			}
 			graphic ??= GetComponent<Graphic>();
-			EnsureAdditionalChannels();
 			graphic.SetVerticesDirty();
 		}
 
 		private void Update()
 		{
+			if (!GraphicObjectReady) return;
+			
 			Vector2 size = graphic.material.GetVector(EmitterDimensions);
 			if (size == LastEmitterDimensions) return;
 			
@@ -50,12 +63,6 @@ namespace UIParticle
 
 		public void ModifyMesh(Mesh mesh)
 		{
-			if (mesh.vertexCount != 4)
-			{
-				Debug.LogError($"Quad Stacker only accept quads as input", this);
-				return;
-			}
-			
 			var halfSize = quadSize * 0.5f;
 			var vertices = new Vector3[quadsCount * 4];
 			var colors = new Color[vertices.Length];
@@ -86,7 +93,7 @@ namespace UIParticle
 		{
 			if (verts.currentVertCount != 4)
 			{
-				Debug.LogError($"Quad Stacker only accept quads as input", this);
+				Debug.LogError($"UI Particle only accept quads as input", this);
 				return;
 			}
 
