@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace UIParticle
 {
-	[RequireComponent(typeof(RectTransform), typeof(RawImage))]
+	[RequireComponent(typeof(RectTransform), typeof(Image))]
 	[ExecuteAlways]
 	public class UIParticleMeshModifier : MonoBehaviour, IMeshModifier
 	{
@@ -39,7 +39,7 @@ namespace UIParticle
 			}
 			EnsureAdditionalChannels();
 			rectTransform ??= GetComponent<RectTransform>();
-			graphic ??= GetComponent<Graphic>();
+			graphic = GetComponent<Graphic>();
 			graphic.SetVerticesDirty();
 		}
 
